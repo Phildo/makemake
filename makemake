@@ -1,10 +1,10 @@
 #!/bin/bash
 DEBUG="-g"
 CC="g++"
-CFLAGS="-Wall -c `pkg-config --cflags glfw3` $DEBUG"
+CCFLAGS="-Wall -c `pkg-config --cflags glfw3` $DEBUG"
 
 for i in $@; do 
   $CC -M $i 2>/dev/null | tr ' ' '\n' | grep -ve "^$" | grep -ve "^.$"  | grep -ve "^/" | xargs
-  echo $CC $CCFLAGS $i -o `basename $i`
+  echo "	$CC $CCFLAGS `basename $i` -o `basename $i | sed s/cpp/o/`"
   echo
 done
