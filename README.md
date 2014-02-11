@@ -9,14 +9,25 @@ Just call it like so:
 
     makemake src/*.cpp
     
-with all the .cpp files you want to calculate dependancies for, and it will output with the following format:
+It will read a 'makemakefile' if it exists, and switch out all the content between
+
+    #MAKEMAKE<
+    
+and
+
+    #MAKEMAKE>
+    
+with the dependancies of the .cpp files you want to calculate dependancies for, in the following format:
 
     a.o : a.cpp a.h b.h c.h
-      g++ a.cpp -o a.o
+      $(CC) $(CFLAGS) a.cpp -o $(OUT)/a.o
       
     b.o : b.cpp b.h d.h
-      g++ a.cpp -o a.o
+      $(CC) $(CFLAGS) a.cpp -o $(OUT)/b.o
       
     ...
     
-there are a bunch of cflags in there too. again- this is currently catering to one project of mine. will generalize later.
+It will read various variables from the makemakefile-
+
+    CC = g++ #will use this to determine dependancies
+    CFLAGS = blah #will pass this to CC when determining dependancies
