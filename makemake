@@ -1,10 +1,56 @@
 #!/bin/bash
-DEBUG="-g"
-CC="g++"
-CCFLAGS="-Wall -c `pkg-config --cflags glfw3` $DEBUG"
+
+TMP_DEP_FILE=.makemake_deps.tmp
+TMP_MAK_FILE=.makemake_mak.tmp
+
+touch $TMP_DEP_FILE
+touch $TMP_MAK_FILE
+OBJS=""
+
+parseFromMakeMake()
+{
+  VAL=`cat makemakefile | grep -e "^$1 *= *" | sed "s/^$1 *= *//"`
+
+  #recursive parse other vars
+  while [ ! -z "`echo $VAL | grep -e '\$\(.*\)'`" ]; do
+    VAR=`echo $VAL | sed 's/^.*$(//' | sed 's/).*$//'`
+    RVAL=`parseFromMakeMake "$VAR"`
+    VAL=`echo $VAL | sed s/\$\($VAR\)/$RVAL/g`
+  done
+
+  #handle shell expansions
+  if [ ! -z "`echo $VAL | grep -e '\`.*\`'`" ]; then
+    VAR=`echo $VAL | sed 's/^[^\`]*\`//' | sed 's/\`.*$//'`
+    RVAL=`$VAR`
+    VAR='`'$VAR'`'
+    VAL=`echo $VAL | sed "s@$VAR@$RVAL@g"`
+  fi
+
+  echo $VAL
+}
+
+
+
+CC=`parseFromMakeMake CC`
+CFLAGS=`parseFromMakeMake CFLAGS`
+OUT=`parseFromMakeMake OUT`
 
 for i in $@; do 
-  $CC -M $i 2>/dev/null | tr ' ' '\n' | grep -ve "^$" | grep -ve "^.$"  | grep -ve "^/" | xargs
-  echo "	$CC $CCFLAGS `basename $i` -o `basename $i | sed s/cpp/o/`"
-  echo
+  OUTFILE="$OUT/`basename $i | sed s/.cpp/.o/`"
+  OBJS="$OBJS$OUTFILE "
+  $CC $CFLAGS -M $i 2>/dev/null | tr ' ' '\n' | grep -ve "^$" | grep -ve "^.$"  | grep -ve "^/" | xargs >> $TMP_DEP_FILE
+  echo "	"'$(CC) $(CFLAGS)'" $i -o $OUTFILE"                                                     >> $TMP_DEP_FILE
+  echo                                                                                                  >> $TMP_DEP_FILE
 done
+
+cat makemakefile | awk 'BEGIN { del_found=0 } del_found==0 { print } /^#MAKEMAKE</ { del_found=1 }' >> $TMP_MAK_FILE
+echo "OBJS=$OBJS"                                                                                   >> $TMP_MAK_FILE
+echo                                                                                                >> $TMP_MAK_FILE
+echo '$(OUT) : $(OBJS)'                                                                             >> $TMP_MAK_FILE
+echo '	$(CC) $(LFLAGS) $(OBJS) -o $(OUT)'                                                          >> $TMP_MAK_FILE
+echo                                                                                                >> $TMP_MAK_FILE
+cat $TMP_DEP_FILE                                                                                   >> $TMP_MAK_FILE
+cat makemakefile | awk 'BEGIN { del_found=0 } /^#MAKEMAKE>/ { del_found=1 } del_found==1 { print }' >> $TMP_MAK_FILE
+
+exit 0
+
