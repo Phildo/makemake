@@ -33,11 +33,11 @@ parseFromMakeMake()
 
 CC=`parseFromMakeMake CC`
 CFLAGS=`parseFromMakeMake CFLAGS`
-OUT=`parseFromMakeMake OUT`
 
 for i in $@; do 
-  OUTFILE="$OUT/`basename $i | sed s/.cpp/.o/`"
+  OUTFILE='$(ODIR)'"/`basename $i | sed s/.cpp/.o/`"
   OBJS="$OBJS$OUTFILE "
+  echo -n '$(ODIR)/'                                                                                    >> $TMP_DEP_FILE
   $CC $CFLAGS -M $i 2>/dev/null | tr ' ' '\n' | grep -ve "^$" | grep -ve "^.$"  | grep -ve "^/" | xargs >> $TMP_DEP_FILE
   echo "	"'$(CC) $(CFLAGS)'" $i -o $OUTFILE"                                                     >> $TMP_DEP_FILE
   echo                                                                                                  >> $TMP_DEP_FILE
@@ -51,6 +51,9 @@ echo '	$(CC) $(LFLAGS) $(OBJS) -o $(OUT)'                                       
 echo                                                                                                >> $TMP_MAK_FILE
 cat $TMP_DEP_FILE                                                                                   >> $TMP_MAK_FILE
 cat makemakefile | awk 'BEGIN { del_found=0 } /^#MAKEMAKE>/ { del_found=1 } del_found==1 { print }' >> $TMP_MAK_FILE
+
+mv $TMP_MAK_FILE makefile
+rm $TMP_DEP_FILE
 
 exit 0
 

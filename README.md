@@ -19,11 +19,11 @@ and
     
 with the dependancies of the .cpp files you want to calculate dependancies for, in the following format:
 
-    a.o : a.cpp a.h b.h c.h
-      $(CC) $(CFLAGS) a.cpp -o $(OUT)/a.o
+    $(ODIR)/a.o : a.cpp a.h b.h c.h
+      $(CC) $(CFLAGS) a.cpp -o $(ODIR)/a.o
       
-    b.o : b.cpp b.h d.h
-      $(CC) $(CFLAGS) a.cpp -o $(OUT)/b.o
+    $(ODIR)/b.o : b.cpp b.h d.h
+      $(CC) $(CFLAGS) a.cpp -o $(ODIR)/b.o
       
     ...
     
